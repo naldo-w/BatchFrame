@@ -69,40 +69,38 @@ body {
   display: flex; flex-direction: column; gap: 18px;
 }
 /* ── Shared mono labels ─────────────────────────────────── */
-.eyebrow, .site-tag, .queue-status, .control-label, .row-name, .col-lbl, .site-link, .site-version {
+.eyebrow, .site-tag, .queue-status, .control-label, .row-name, .col-lbl, .site-link, .site-version, h1, .site-note, .site-brand {
   font-family: var(--font-mono); letter-spacing: var(--tracking-label);
   text-transform: uppercase; color: var(--ink-secondary);
 }
-.eyebrow, .site-tag, .queue-status, .control-label, .site-link, .site-version { font-size: 10px; line-height: 1.5; }
+.eyebrow, .site-tag, .queue-status, .control-label, .site-link, .site-version, .site-note, .site-brand { font-size: 10px; line-height: 1.5; }
 
 /* ── Header ──────────────────────────────────────────────── */
 .site-head {
   display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start;
-  gap: 18px 40px; padding: 4px 2px 12px;
+  gap: 12px 40px; padding: 4px 2px 12px;
 }
 .site-head > * {
   opacity: 0; transform: translateY(-8px);
   animation: fadeInDown 0.56s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 .site-head > *:nth-child(2) { animation-delay: 0.08s; }
-.site-title { display: flex; flex-direction: column; gap: 10px; min-width: 0; max-width: 920px; }
+.site-title { display: flex; flex-direction: column; gap: 4px; min-width: 0; max-width: 920px; }
 h1 {
-  font-family: var(--font-display); font-size: clamp(36px, 6.8vw, 78px);
-  font-weight: 400; letter-spacing: 0; line-height: 0.92;
+  font-size: 13px; font-weight: 700; line-height: 1.2;
+  color: var(--ink);
 }
 .site-kicker {
   justify-self: end;
-  display: flex; flex-direction: column; align-items: flex-end; gap: 12px;
-  max-width: 360px; padding-top: 4px;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 6px;
+  max-width: 380px; padding-top: 0;
 }
 .site-tag { color: var(--accent); text-align: right; line-height: 1.5; }
 .site-note {
-  font-family: var(--font-quote); font-size: clamp(18px, 2.4vw, 30px);
-  line-height: 1.05; color: var(--ink);
+  max-width: 720px; color: var(--ink-secondary);
 }
-.site-title .site-note { max-width: 760px; }
 .site-actions {
-  display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px 14px;
+  display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px 14px;
 }
 .site-link {
   color: var(--ink-secondary); text-decoration: none;
@@ -111,7 +109,6 @@ h1 {
 .site-link:hover { color: var(--accent); transform: translateY(-1px); }
 .site-version { color: var(--ink); }
 .site-kicker .site-tag { color: var(--ink-secondary); }
-}
 
 /* ── Toolbar : upload + actions ─────────────────────────── */
 .toolbar {
@@ -434,7 +431,11 @@ h1 {
   animation: fadeInAcross 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.3s forwards;
 }
 .site-foot > *:nth-child(2) { animation-delay: 0.38s; }
-.brand-mark { width: clamp(118px, 14vw, 168px); height: auto; display: block; }
+.site-brand {
+  color: var(--ink); text-decoration: none;
+  transition: color 0.16s ease, transform 0.16s ease;
+}
+.site-brand:hover { color: var(--accent); transform: translateY(-1px); }
 .site-foot .site-tag { color: var(--ink-secondary); text-align: center; }
 .site-foot-meta {
   display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
@@ -516,7 +517,7 @@ h1 {
   <div class="rows-wrap" id="rowsWrap"></div>
 
   <footer class="site-foot">
-    <img class="brand-mark" src="assets/logotype-wordmark.svg" alt="naldo.design">
+    <a class="site-brand" href="https://www.instagram.com/naldo.design/" target="_blank" rel="noopener">@naldo.design</a>
     <nav class="site-foot-nav" aria-label="Footer links">
       <a class="site-link" href="https://github.com/naldo-w/BatchFrame" target="_blank" rel="noopener">Source</a>
       <a class="site-link" href="https://github.com/naldo-w/BatchFrame/issues" target="_blank" rel="noopener">Issues</a>
@@ -524,7 +525,7 @@ h1 {
     </nav>
     <div class="site-foot-meta">
       <span class="site-tag">Static app · no upload server</span>
-      <span class="site-foot-copy">naldo.design · crop · sign · frame · export</span>
+      <span class="site-foot-copy">@naldo.design · crop · sign · frame · export</span>
     </div>
   </footer>
 </main>
