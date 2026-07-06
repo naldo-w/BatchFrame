@@ -69,36 +69,48 @@ body {
   display: flex; flex-direction: column; gap: 18px;
 }
 /* ── Shared mono labels ─────────────────────────────────── */
-.eyebrow, .site-tag, .queue-status, .control-label, .row-name, .col-lbl {
+.eyebrow, .site-tag, .queue-status, .control-label, .row-name, .col-lbl, .site-link, .site-version {
   font-family: var(--font-mono); letter-spacing: var(--tracking-label);
   text-transform: uppercase; color: var(--ink-secondary);
 }
-.eyebrow, .site-tag, .queue-status, .control-label { font-size: 10px; line-height: 1.5; }
+.eyebrow, .site-tag, .queue-status, .control-label, .site-link, .site-version { font-size: 10px; line-height: 1.5; }
 
 /* ── Header ──────────────────────────────────────────────── */
 .site-head {
-  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end;
-  gap: 14px 36px; padding: 6px 2px 10px;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start;
+  gap: 18px 40px; padding: 4px 2px 12px;
 }
 .site-head > * {
   opacity: 0; transform: translateY(-8px);
   animation: fadeInDown 0.56s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 .site-head > *:nth-child(2) { animation-delay: 0.08s; }
-.site-title { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.site-title { display: flex; flex-direction: column; gap: 10px; min-width: 0; max-width: 920px; }
 h1 {
   font-family: var(--font-display); font-size: clamp(36px, 6.8vw, 78px);
   font-weight: 400; letter-spacing: 0; line-height: 0.92;
 }
 .site-kicker {
   justify-self: end;
-  display: flex; flex-direction: column; align-items: flex-end; gap: 6px;
-  max-width: 320px;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 12px;
+  max-width: 360px; padding-top: 4px;
 }
 .site-tag { color: var(--accent); text-align: right; line-height: 1.5; }
 .site-note {
   font-family: var(--font-quote); font-size: clamp(18px, 2.4vw, 30px);
-  line-height: 1.05; color: var(--ink); text-align: right;
+  line-height: 1.05; color: var(--ink);
+}
+.site-title .site-note { max-width: 760px; }
+.site-actions {
+  display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px 14px;
+}
+.site-link {
+  color: var(--ink-secondary); text-decoration: none;
+  transition: color 0.16s ease, transform 0.16s ease;
+}
+.site-link:hover { color: var(--accent); transform: translateY(-1px); }
+.site-version { color: var(--ink); }
+.site-kicker .site-tag { color: var(--ink-secondary); }
 }
 
 /* ── Toolbar : upload + actions ─────────────────────────── */
@@ -413,8 +425,8 @@ h1 {
 
 /* ── Footer ──────────────────────────────────────────────── */
 .site-foot {
-  display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; flex-wrap: wrap;
-  padding: 10px 2px 0;
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: end;
+  gap: 18px 28px; padding: 12px 2px 0;
   color: var(--ink-secondary);
 }
 .site-foot > * {
@@ -423,9 +435,12 @@ h1 {
 }
 .site-foot > *:nth-child(2) { animation-delay: 0.38s; }
 .brand-mark { width: clamp(118px, 14vw, 168px); height: auto; display: block; }
-.site-foot .site-tag { color: var(--ink-secondary); text-align: right; }
+.site-foot .site-tag { color: var(--ink-secondary); text-align: center; }
 .site-foot-meta {
   display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+}
+.site-foot-nav {
+  display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; min-width: 0;
 }
 .site-foot-copy {
   font-family: var(--font-mono); font-size: 9px; line-height: 1.4;
@@ -450,9 +465,11 @@ h1 {
   body { padding-inline: 12px; }
   .site-head { grid-template-columns: 1fr; }
   .site-kicker { justify-self: start; align-items: flex-start; max-width: none; }
-  .site-note, .site-tag { text-align: left; }
+  .site-actions { justify-content: flex-start; }
+  .site-tag { text-align: left; }
   .btn-group { width: 100%; }
-  .site-foot { align-items: flex-start; }
+  .site-foot { grid-template-columns: 1fr; align-items: flex-start; }
+  .site-foot-nav { justify-content: flex-start; }
   .site-foot-meta { align-items: flex-start; }
   .site-foot .site-tag { text-align: left; }
 }
@@ -472,10 +489,15 @@ h1 {
     <div class="site-title">
       <span class="eyebrow">Batch crop · signature · border · 1440 square export</span>
       <h1>BatchFrame</h1>
+      <p class="site-note">A focused browser app for turning image batches into signed, framed export sets.</p>
     </div>
     <div class="site-kicker">
-      <span class="site-note">Crafting timeless moments</span>
-      <span class="site-tag">Image split desk · EST MMXX</span>
+      <span class="site-version">Public web app · v1</span>
+      <div class="site-actions" aria-label="Project links">
+        <a class="site-link" href="https://github.com/naldo-w/BatchFrame" target="_blank" rel="noopener">GitHub</a>
+        <a class="site-link" href="https://naldo-w.github.io/BatchFrame/" aria-current="page">Live app</a>
+      </div>
+      <span class="site-tag">Runs locally in your browser</span>
     </div>
   </header>
 
@@ -495,8 +517,13 @@ h1 {
 
   <footer class="site-foot">
     <img class="brand-mark" src="assets/logotype-wordmark.svg" alt="naldo.design">
+    <nav class="site-foot-nav" aria-label="Footer links">
+      <a class="site-link" href="https://github.com/naldo-w/BatchFrame" target="_blank" rel="noopener">Source</a>
+      <a class="site-link" href="https://github.com/naldo-w/BatchFrame/issues" target="_blank" rel="noopener">Issues</a>
+      <a class="site-link" href="https://pages.github.com/" target="_blank" rel="noopener">GitHub Pages</a>
+    </nav>
     <div class="site-foot-meta">
-      <span class="site-tag">Batch framing tool for signed image systems</span>
+      <span class="site-tag">Static app · no upload server</span>
       <span class="site-foot-copy">naldo.design · crop · sign · frame · export</span>
     </div>
   </footer>
