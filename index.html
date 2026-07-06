@@ -32,14 +32,38 @@
   --surface: var(--color-grey-ivory);
   --surface-dark: var(--color-grey-onyx);
   --line-faint: var(--color-grey-pewter);
+  --page-overlay-a: rgba(244, 244, 244, 0.91);
+  --page-overlay-b: rgba(244, 244, 244, 0.88);
+  --panel-line: rgba(10, 10, 10, 0.16);
+  --panel-line-soft: rgba(10, 10, 10, 0.12);
+  --panel-line-strong: rgba(10, 10, 10, 0.32);
+  --control-line: rgba(10, 10, 10, 0.24);
+  --control-hover: rgba(10, 10, 10, 0.03);
+  --preview-band: rgba(10, 10, 10, 0.02);
   --radius-xs: 1.5px;
   --radius-sm: 8px;
   --radius-md: 16px;
   --tracking-label: 0.18em;
 }
+body.theme-dark {
+  --ink: var(--color-grey-ivory);
+  --ink-secondary: var(--color-grey-pewter);
+  --ink-inverse: var(--color-grey-onyx);
+  --surface: rgb(18, 18, 18);
+  --surface-dark: var(--color-grey-ivory);
+  --line-faint: var(--color-grey-graphite);
+  --page-overlay-a: rgba(10, 10, 10, 0.9);
+  --page-overlay-b: rgba(10, 10, 10, 0.86);
+  --panel-line: rgba(244, 244, 244, 0.16);
+  --panel-line-soft: rgba(244, 244, 244, 0.12);
+  --panel-line-strong: rgba(244, 244, 244, 0.32);
+  --control-line: rgba(244, 244, 244, 0.24);
+  --control-hover: rgba(244, 244, 244, 0.06);
+  --preview-band: rgba(244, 244, 244, 0.035);
+}
 body {
   background:
-    linear-gradient(rgba(244, 244, 244, 0.91), rgba(244, 244, 244, 0.88)),
+    linear-gradient(var(--page-overlay-a), var(--page-overlay-b)),
     url("assets/paper-texture.png") center/900px auto repeat;
   color: var(--ink);
   font-family: var(--font-display);
@@ -114,7 +138,7 @@ h1 {
 .toolbar {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
   background: var(--surface);
-  border: 1px solid rgba(10, 10, 10, 0.16); border-radius: var(--radius-sm);
+  border: 1px solid var(--panel-line); border-radius: var(--radius-sm);
   padding: 12px 14px;
   opacity: 0; transform: translateY(-8px);
   animation: fadeInDown 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.16s forwards;
@@ -122,6 +146,16 @@ h1 {
 #fileInput { display: none; }
 .queue-status { text-align: left; }
 .btn-group { display: flex; flex-wrap: wrap; gap: 8px; }
+.utility-controls {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;
+}
+.segmented {
+  display: flex; align-items: center; gap: 3px;
+}
+.seg-label {
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--ink-secondary);
+}
 
 /* ── 全畫面拖曳上傳疊層 ─────────────────────────────────── */
 .drop-overlay {
@@ -180,7 +214,7 @@ h1 {
   display: grid;
   grid-template-columns: minmax(190px, 230px) 1fr;
   background: var(--surface);
-  border: 1px solid rgba(10, 10, 10, 0.16);
+  border: 1px solid var(--panel-line);
   border-radius: var(--radius-sm);
   overflow: hidden;
   opacity: 0; transform: translateY(-10px);
@@ -194,23 +228,23 @@ h1 {
 .col-setting {
   display: flex; flex-direction: column; gap: 10px;
   padding: 18px; min-width: 0;
-  border-right: 1px solid rgba(10, 10, 10, 0.12);
+  border-right: 1px solid var(--panel-line-soft);
   background: var(--surface);
 }
 
 .previews {
   display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 14px;
   padding: 14px; min-width: 0;
-  background: rgba(10, 10, 10, 0.02);
+  background: var(--preview-band);
   --part-delay: 0.09s;
 }
 .row-name {
   font-family: var(--font-mono); font-size: 10px; color: var(--ink-secondary);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.05em;
-  padding-bottom: 8px; border-bottom: 1px solid rgba(10, 10, 10, 0.18);
+  padding-bottom: 8px; border-bottom: 1px solid var(--panel-line);
 }
 .col-setting input[type="text"] {
-  background: transparent; border: 1px solid rgba(10, 10, 10, 0.24); border-radius: var(--radius-xs);
+  background: transparent; border: 1px solid var(--control-line); border-radius: var(--radius-xs);
   color: var(--ink); font-size: 11px; padding: 10px 9px; width: 100%; outline: none;
   letter-spacing: 0.2em; text-transform: uppercase;
   font-family: 'Anybody', system-ui; font-weight: 200; font-style: normal; font-variation-settings:"wdth" 150;
@@ -225,12 +259,12 @@ h1 {
 .sig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
 .orient-row { display: flex; gap: 3px; }
 .tbtn {
-  flex: 1; background: transparent; border: 1px solid rgba(10, 10, 10, 0.2); border-radius: var(--radius-xs);
+  flex: 1; background: transparent; border: 1px solid var(--control-line); border-radius: var(--radius-xs);
   color: var(--ink-secondary); font-family: var(--font-mono); font-size: 10px; padding: 8px 4px;
   cursor: pointer; transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.12s ease;
   text-align: center; line-height: 1;
 }
-.tbtn:hover { color: var(--ink); border-color: rgba(10, 10, 10, 0.52); transform: translateY(-1px); }
+.tbtn:hover { color: var(--ink); border-color: var(--panel-line-strong); transform: translateY(-1px); }
 .tbtn.on { background: var(--accent); border-color: var(--accent); color: var(--ink-inverse); font-weight: 700; }
 .dl-btn {
   background: var(--ink); border: 1px solid var(--ink); border-radius: var(--radius-xs);
@@ -254,7 +288,7 @@ h1 {
 }
 .col-frame canvas {
   width: 100%; aspect-ratio: 1; border-radius: var(--radius-xs); background: #0a0a0a; display: block;
-  outline: 1px solid rgba(10, 10, 10, 0.16);
+  outline: 1px solid var(--panel-line);
   cursor: zoom-in;
   transition: transform 0.2s ease, outline-color 0.2s ease, filter 0.2s ease;
 }
@@ -416,7 +450,8 @@ h1 {
 }
 .abtn:hover { transform: translateY(-1px); filter: brightness(0.94); }
 .abtn.sec { background: transparent; border-color: rgba(10, 10, 10, 0.32); color: var(--ink); }
-.abtn.sec:hover { border-color: var(--ink); background: rgba(10, 10, 10, 0.03); filter: none; }
+.abtn.sec { border-color: var(--panel-line-strong); }
+.abtn.sec:hover { border-color: var(--ink); background: var(--control-hover); filter: none; }
 .abtn:disabled { opacity: 0.28; cursor: default; }
 .abtn:disabled:hover { transform: none; filter: none; background: var(--accent); }
 
@@ -460,7 +495,7 @@ h1 {
 }
 @media (max-width: 860px) {
   .img-row { grid-template-columns: 1fr; }
-  .col-setting { border-right: 0; border-bottom: 1px solid rgba(10, 10, 10, 0.12); }
+  .col-setting { border-right: 0; border-bottom: 1px solid var(--panel-line-soft); }
 }
 @media (max-width: 720px) {
   body { padding-inline: 12px; }
@@ -507,6 +542,18 @@ h1 {
 
   <section class="toolbar" aria-label="Actions">
     <span class="queue-status" id="queueStatus">尚未載入圖片 · 點擊 Add Images 或拖曳圖片至畫面任意處</span>
+    <div class="utility-controls" aria-label="Display and frame options">
+      <div class="segmented" aria-label="Interface mode">
+        <span class="seg-label">Mode</span>
+        <button class="tbtn mode-btn on" type="button" data-theme="light">LIGHT</button>
+        <button class="tbtn mode-btn" type="button" data-theme="dark">DARK</button>
+      </div>
+      <div class="segmented" aria-label="Export frame color">
+        <span class="seg-label">Frame</span>
+        <button class="tbtn frame-btn on" type="button" data-frame="white">WHITE</button>
+        <button class="tbtn frame-btn" type="button" data-frame="black">BLACK</button>
+      </div>
+    </div>
     <div class="btn-group">
       <button class="abtn sec" id="btnAdd">Add Images</button>
       <button class="abtn sec" id="btnClear" disabled>Clear All</button>
@@ -593,7 +640,7 @@ h1 {
 const C          = 2880;
 const PREVIEW_SZ = 720;
 
-// 圖1,2,3 全部使用同一個主畫布（framed photo，有白框）
+// 圖1,2,3 全部使用同一個主畫布（framed photo，可切換白框／黑框）
 const PHOTO1 = {
   landscape: { x: 246, y: 767,  w: 2388, h: 1346 },
   portrait:  { x: 767, y: 246,  w: 1346, h: 2388 },
@@ -650,6 +697,11 @@ const OUTPUT = 1440;
 // ── Queue ─────────────────────────────────────────────────────────────────────
 let queue     = [];
 let ingesting = false;
+let frameTone = localStorage.getItem('batchframe.frameTone') || 'white';
+let uiTheme = localStorage.getItem('batchframe.theme') || 'light';
+let editorIndex = -1;
+let showCrops = true;
+let guideMode = 'none';
 
 // ── DOM ──────────────────────────────────────────────────────────────────────
 const fileInput = document.getElementById('fileInput');
@@ -667,6 +719,26 @@ const editorCanvas = document.getElementById('editorCanvas');
 const editorLabel = document.getElementById('editorLabel');
 const editorOverlay = document.getElementById('editorOverlay');
 const editorScale = document.getElementById('editorScale');
+
+function setTheme(theme) {
+  uiTheme = theme === 'dark' ? 'dark' : 'light';
+  document.body.classList.toggle('theme-dark', uiTheme === 'dark');
+  document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.toggle('on', btn.dataset.theme === uiTheme));
+  localStorage.setItem('batchframe.theme', uiTheme);
+}
+
+function setFrameTone(tone) {
+  frameTone = tone === 'black' ? 'black' : 'white';
+  document.querySelectorAll('.frame-btn').forEach(btn => btn.classList.toggle('on', btn.dataset.frame === frameTone));
+  localStorage.setItem('batchframe.frameTone', frameTone);
+  queue.forEach((_, i) => renderRow(i));
+  if (editorIndex >= 0) renderEditor();
+}
+
+document.querySelectorAll('.mode-btn').forEach(btn => btn.addEventListener('click', () => setTheme(btn.dataset.theme)));
+document.querySelectorAll('.frame-btn').forEach(btn => btn.addEventListener('click', () => setFrameTone(btn.dataset.frame)));
+setTheme(uiTheme);
+setFrameTone(frameTone);
 
 fileInput.addEventListener('change', e => { ingest(e.target.files); e.target.value = ''; });
 btnAdd.addEventListener('click', () => fileInput.click());
@@ -976,9 +1048,6 @@ function makeMasterCol(i) {
 }
 
 // ── Master proof 編輯 overlay ─────────────────────────────────────────────────
-let editorIndex = -1;
-let showCrops = true;
-let guideMode = 'none';
 const EDIT_SZ = 960;
 
 const CROP_LABELS = { c1: 'CROP 01', c2: 'CROP 02', c3: 'CROP 03' };
@@ -1143,10 +1212,13 @@ function buildMaster(img, ph, pos, rawSig, isPortrait, view) {
   const oc = document.createElement('canvas');
   oc.width = C; oc.height = C;
   const ctx = oc.getContext('2d');
-  ctx.fillStyle = '#fff';
+  ctx.fillStyle = frameTone === 'black' ? '#000' : '#fff';
   ctx.fillRect(0, 0, C, C);
   if (img) coverImg(ctx, img, ph.x, ph.y, ph.w, ph.h, view);
-  else { ctx.fillStyle = '#000'; ctx.fillRect(ph.x, ph.y, ph.w, ph.h); }
+  else {
+    ctx.fillStyle = frameTone === 'black' ? '#fff' : '#000';
+    ctx.fillRect(ph.x, ph.y, ph.w, ph.h);
+  }
   drawSig(ctx, ph, pos, rawSig, isPortrait);
   return oc;
 }
