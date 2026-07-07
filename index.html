@@ -333,8 +333,8 @@ a.lbl:hover{color:var(--accent);transform:translateY(-1px)}
     </label>
     <div class="size-ctl">
       <span class="seg-lbl">Size</span>
-      <span class="lbl" id="sigSizeValue">100% · 23px</span>
-      <input id="sigSizeRange" type="range" min="25" max="400" step="5" value="100">
+      <span class="lbl" id="sigSizeValue">23px</span>
+      <input id="sigSizeRange" type="range" min="6" max="92" step="1" value="23">
     </div>
     <div class="size-ctl">
       <span class="seg-lbl">Opacity</span>
@@ -624,8 +624,12 @@ class Component extends DCLogic {
     function syncSignatureControls() {
       if (document.activeElement !== sigFontInput) sigFontInput.value = signatureFontFamily;
       if (document.activeElement !== sigTextInput) sigTextInput.value = signatureText;
-      sigSizeRange.value = String(Math.round(signatureScale * 100));
-      sigSizeValue.textContent = `${Math.round(signatureScale * 100)}% · ${signatureSizePx()}px`;
+      const sigBase = signatureImage ? SIG_H : FONT_SIZE;
+      sigSizeRange.min = String(Math.round(sigBase * 0.25));
+      sigSizeRange.max = String(Math.round(sigBase * 4));
+      sigSizeRange.step = '1';
+      sigSizeRange.value = String(signatureSizePx());
+      sigSizeValue.textContent = `${signatureSizePx()}px`;
       sigOpacityRange.value = String(Math.round(signatureOpacity * 100));
       sigOpacityValue.textContent = `${Math.round(signatureOpacity * 100)}%`;
       sigAssetStatus.textContent = signatureImage ? signatureImageName || 'PNG signature' : 'Font signature';
@@ -754,7 +758,8 @@ class Component extends DCLogic {
       sigFontInput.setAttribute('aria-expanded', 'false');
     });
     sigSizeRange.addEventListener('input', () => {
-      signatureScale = Number(sigSizeRange.value) / 100;
+      const sigBase = signatureImage ? SIG_H : FONT_SIZE;
+      signatureScale = Math.min(4, Math.max(0.25, Number(sigSizeRange.value) / sigBase));
       localStorage.setItem('batchframe.signatureScale', String(signatureScale));
       syncSignatureControls();
       renderAllRows();
