@@ -1,2 +1,18 @@
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor / IDE
 .claude/
+.vscode/
+.idea/
+*.swp
+
+# Logs & temp
+*.log
+node_modules/
+
+# Local scratch (not part of the app)
+reference/
+screenshots/
