@@ -22,8 +22,9 @@ mkdir -p "$BUILD_DIR" "$DIST_DIR" "$MACOS_DIR" "$RESOURCES_DIR" "$MODULE_CACHE_D
 cp "$ROOT_DIR/index.html" "$RESOURCES_DIR/index.html"
 cp "$ROOT_DIR/support.js" "$RESOURCES_DIR/support.js"
 cp "$ROOT_DIR/BatchFrame.png" "$RESOURCES_DIR/BatchFrame.png"
+cp "$ROOT_DIR/BatchFrame_s.png" "$RESOURCES_DIR/BatchFrame_s.png"
 
-python3 - "$ROOT_DIR/BatchFrame.png" "$ICNS_FILE" <<'PY'
+python3 - "$ROOT_DIR/BatchFrame_s.png" "$ICNS_FILE" <<'PY'
 import sys
 from PIL import Image
 
