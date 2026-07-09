@@ -12,6 +12,8 @@
 # Logs & temp
 *.log
 node_modules/
+build/
+dist/
 
 # Local scratch (not part of the app)
 reference/

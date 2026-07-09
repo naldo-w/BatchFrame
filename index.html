@@ -217,7 +217,10 @@ a.lbl:hover{color:var(--accent);transform:translateY(-1px)}
 .empty-inner p{font-family:var(--font-mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-2)}
 
 /* ── Footer ───────────────────────────────── */
-.footer{margin-top:auto;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;padding:16px 0 30px;border-top:1px solid var(--line)}
+.footer{margin-top:auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-items:baseline;gap:20px var(--gutter);padding:16px 0 30px;border-top:1px solid var(--line)}
+.footer > *:nth-child(1){grid-column:span 1}
+.footer > *:nth-child(2){grid-column:span 1}
+.footer > *:nth-child(3){grid-column:span 2;text-align:right}
 .footer-copy{font-family:var(--font-mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-2)}
 
 /* ── Drop overlay ─────────────────────────── */
@@ -283,47 +286,46 @@ a.lbl:hover{color:var(--accent);transform:translateY(-1px)}
 .status-tip.error{border-color:var(--accent);color:var(--accent)}
 
 @media(max-width:1120px){.controlbar{grid-template-columns:repeat(2,minmax(0,1fr))}.cb-status{grid-column:1 / -1}.cb-right{grid-column:1 / -1;grid-template-columns:repeat(2,minmax(0,1fr))}.controlbar .seg{grid-column:span 1}.cb-actions{grid-column:1 / -1}.signaturebar{grid-template-columns:repeat(2,minmax(0,1fr))}.sig-panel.source-panel,.sig-panel.font-panel,.sig-panel.local-font-panel,.sig-panel.primary,.signaturebar > .ctl-size,.signaturebar > .ctl-opacity{grid-column:auto;grid-row:auto}.sig-panel.png-panel{grid-column:1 / -1;grid-row:auto}.signaturebar.png-mode .sig-panel.source-panel{grid-column:1;grid-row:1}.signaturebar.png-mode .sig-panel.png-panel{grid-column:2;grid-row:1}.signaturebar.png-mode .ctl-size{grid-column:1;grid-row:2}.signaturebar.png-mode .ctl-opacity{grid-column:2;grid-row:2}.row{grid-template-columns:repeat(2,minmax(0,1fr))}.row-meta{grid-column:span 1}.row-proof{grid-column:span 1}.crops-grid{grid-column:1 / -1}}
-@media(max-width:768px){.controlbar,.cb-right,.signaturebar,.signaturebar.png-mode{grid-template-columns:1fr}.cb-status,.controlbar .seg,.cb-actions,.cb-right{grid-column:1 / -1}.sig-panel,.sig-panel.font-panel,.sig-panel.local-font-panel,.sig-panel.primary,.sig-panel.source-panel,.sig-panel.png-panel,.signaturebar > .size-ctl{grid-column:1 / -1}.signaturebar.png-mode .sig-panel.source-panel,.signaturebar.png-mode .sig-panel.png-panel,.signaturebar.png-mode .ctl-size,.signaturebar.png-mode .ctl-opacity{grid-column:1 / -1;grid-row:auto}.sig-panel,.sig-panel.font-panel,.sig-panel.png-panel{align-items:stretch;justify-content:flex-start}.sig-panel.font-panel,.sig-panel.png-panel{flex-wrap:wrap}.size-ctl{gap:6px}.size-ctl input{width:100%}.row{grid-template-columns:1fr}.row-meta,.row-proof,.crops-grid{grid-column:1 / -1}}
+@media(max-width:768px){.masthead{flex-direction:column;align-items:flex-start;gap:14px}.mast-meta{padding-bottom:0}.footer{grid-template-columns:1fr}.footer > *{grid-column:1 / -1;text-align:left}.controlbar,.cb-right,.signaturebar,.signaturebar.png-mode{grid-template-columns:1fr}.cb-status,.controlbar .seg,.cb-actions,.cb-right{grid-column:1 / -1}.sig-panel,.sig-panel.font-panel,.sig-panel.local-font-panel,.sig-panel.primary,.sig-panel.source-panel,.sig-panel.png-panel,.signaturebar > .size-ctl{grid-column:1 / -1}.signaturebar.png-mode .sig-panel.source-panel,.signaturebar.png-mode .sig-panel.png-panel,.signaturebar.png-mode .ctl-size,.signaturebar.png-mode .ctl-opacity{grid-column:1 / -1;grid-row:auto}.sig-panel,.sig-panel.font-panel,.sig-panel.png-panel{align-items:stretch;justify-content:flex-start}.sig-panel.font-panel,.sig-panel.png-panel{flex-wrap:wrap}.size-ctl{gap:6px}.size-ctl input{width:100%}.row{grid-template-columns:1fr}.row-meta,.row-proof,.crops-grid{grid-column:1 / -1}}
 @media(max-width:520px){.crops-grid{grid-template-columns:1fr}.joined{grid-template-columns:1fr 1fr}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
 </style>
 </helmet>
 <div class="bf">
-  <header class="masthead">
-    <div class="mast-id">
-      <span class="mast-spec">BatchFrame · Square export · 1440² · Local</span>
-    </div>
-    <div class="mast-meta">
+  <header class="masthead" style="flex-direction: row; gap: 16px">
+    <div class="mast-id" style="width: 100%">
+      BatchFrame</div>
+    <div class="mast-meta" style="padding-bottom: 0px; justify-content: flex-end; width: 100%; height: 100%">
       <span class="lbl">v1</span>
       <a class="lbl" href="https://github.com/naldo-w/BatchFrame" target="_blank" rel="noopener">GitHub ↗</a>
     </div>
   </header>
 
-  <div class="controlbar">
+  <div class="controlbar" style="gap: 16px 16px">
     <span class="cb-status" id="queueStatus">No images loaded</span>
-    <div class="cb-right">
-      <div class="seg" aria-label="Queue">
+    <div class="cb-right" style="gap: 16px 16px">
+      <div class="seg" aria-label="Queue" style="gap: 8px">
         <span class="seg-lbl">Add</span>
         <div class="cb-actions">
           <button class="btn" id="btnAdd" type="button">Add</button>
           <button class="btn" id="btnClear" type="button" disabled="disabled">Clear</button>
         </div>
       </div>
-      <div class="seg" aria-label="Interface mode">
+      <div class="seg" aria-label="Interface mode" style="gap: 8px">
         <span class="seg-lbl">Mode</span>
         <div class="seg-group">
           <button class="seg-btn mode-btn on" type="button" data-theme="light">Light</button>
           <button class="seg-btn mode-btn" type="button" data-theme="dark">Dark</button>
         </div>
       </div>
-      <div class="seg" aria-label="Export frame">
+      <div class="seg" aria-label="Export frame" style="gap: 8px">
         <span class="seg-lbl">Frame</span>
         <div class="seg-group">
           <button class="seg-btn frame-btn on" type="button" data-frame="white">White</button>
           <button class="seg-btn frame-btn" type="button" data-frame="black">Black</button>
         </div>
       </div>
-      <div class="seg" aria-label="Export">
+      <div class="seg" aria-label="Export" style="gap: 8px">
         <span class="seg-lbl">Export</span>
         <div class="cb-actions">
           <button class="btn accent" id="btnAll" type="button" disabled="disabled">Export ZIP</button>
@@ -339,19 +341,19 @@ a.lbl:hover{color:var(--accent);transform:translateY(-1px)}
     <ul class="upload-list" id="uploadList"></ul>
   </div>
 
-  <div class="signaturebar" aria-label="Signature settings">
-    <div class="sig-panel source-panel">
+  <div class="signaturebar" aria-label="Signature settings" style="gap: 16px 16px">
+    <div class="sig-panel source-panel" style="gap: 8px">
       <span class="seg-lbl">Type</span>
       <div class="seg-group signature-source" style="justify-content: space-between">
         <button class="seg-btn on" id="btnSigTextMode" type="button" style="width: 100%">Text</button>
         <button class="seg-btn" id="btnSigPngMode" type="button" style="width: 100%">PNG</button>
       </div>
     </div>
-    <div class="sig-panel local-font-panel">
+    <div class="sig-panel local-font-panel" style="gap: 8px">
       <button class="btn" id="btnLocalFonts" type="button">Load Local Fonts</button>
     </div>
     <div class="sig-panel font-panel">
-      <div class="sig-panel-stack">
+      <div class="sig-panel-stack" style="gap: 8px">
         <span class="seg-lbl">Font</span>
         <div class="font-picker" id="sigFontPicker">
           <input class="font-input" id="sigFontInput" type="text" value="Anybody" autocomplete="off" spellcheck="false" aria-controls="sigFontMenu" aria-expanded="false">
@@ -359,16 +361,16 @@ a.lbl:hover{color:var(--accent);transform:translateY(-1px)}
         </div>
       </div>
     </div>
-    <label class="sig-panel primary">
+    <label class="sig-panel primary" style="gap: 8px">
       <span class="seg-lbl">Signature</span>
       <input class="sig-input" id="sigTextInput" type="text" value="NALDO WONG" placeholder="SIGNATURE" autocomplete="off" spellcheck="false">
     </label>
-    <div class="size-ctl ctl-size">
+    <div class="size-ctl ctl-size" style="gap: 8px">
       <span class="seg-lbl">Size</span>
       <span class="lbl" id="sigSizeValue">23px</span>
       <input id="sigSizeRange" type="range" min="6" max="92" step="1" value="23">
     </div>
-    <div class="size-ctl ctl-opacity">
+    <div class="size-ctl ctl-opacity" style="gap: 8px">
       <span class="seg-lbl">Opacity</span>
       <span class="lbl" id="sigOpacityValue">50%</span>
       <input id="sigOpacityRange" type="range" min="0" max="100" step="5" value="50">
@@ -386,7 +388,7 @@ a.lbl:hover{color:var(--accent);transform:translateY(-1px)}
   <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.heic,.heif,.dng,image/jpeg,image/png,image/heic,image/heif" multiple="multiple">
   <input type="file" id="sigPngInput" accept=".png,image/png">
 
-  <div class="empty" id="emptyState">
+  <div class="empty" id="emptyState" style="margin-top: 16px; margin-bottom: 16px">
     <div class="empty-inner">
       <p>Drop to upload</p>
       <p>JPG · PNG · HEIC · DNG — processed locally</p>
@@ -395,10 +397,9 @@ a.lbl:hover{color:var(--accent);transform:translateY(-1px)}
 
   <main class="rows-wrap" id="rowsWrap" hidden="hidden"></main>
 
-  <footer class="footer">
-    <a class="lbl" href="https://www.instagram.com/n_do.w/" target="_blank" rel="noopener">@n_do.w</a>
+  <footer class="footer" style="justify-content: space-between; padding-bottom: 40px; padding-top: 16px; margin-top: 0px">
+    <a class="lbl" href="https://www.instagram.com/n_do.w/" target="_blank" rel="noopener">@n_do.w</a><span class="lbl">Static · No upload server</span>
     <span class="footer-copy">© 2026 <a class="lbl" href="https://www.instagram.com/naldo.design/" target="_blank" rel="noopener">naldo.design</a> · All rights reserved</span>
-    <span class="lbl">Static · No upload server</span>
   </footer>
 </div>
 <div class="status-tip" id="statusTip" role="status" aria-live="polite"></div>
@@ -1377,14 +1378,28 @@ class Component extends DCLogic {
 
     // ── Export ────────────────────────────────────────────────
     const toBlob = c => new Promise(r => c.toBlob(r, 'image/png'));
-    function dl(blob, fn) {
+    async function dl(blob, fn) {
+      if (window.webkit?.messageHandlers?.batchFrameSave) {
+        const dataUrl = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(blob);
+        });
+        window.webkit.messageHandlers.batchFrameSave.postMessage({
+          filename: fn,
+          mimeType: blob.type || 'application/octet-stream',
+          base64: String(dataUrl).split(',')[1] || ''
+        });
+        return;
+      }
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob); a.download = fn; a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 5000);
     }
     async function downloadFiles(files) {
       for (const file of files) {
-        dl(file, file.name);
+        await dl(file, file.name);
         await sleep(80);
       }
     }
@@ -1449,7 +1464,7 @@ class Component extends DCLogic {
         for (let j = 0; j < outputs.length; j++) zip.file(namesByItem[index][j], await toBlob(outputs[j]));
       }
       const zipBlob = await zip.generateAsync({ type: 'blob' });
-      dl(zipBlob, 'ig_frames.zip');
+      await dl(zipBlob, 'ig_frames.zip');
       btnAll.disabled = false; btnAll.textContent = 'Export ZIP';
       syncExportLabels();
     });

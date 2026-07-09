@@ -22,7 +22,19 @@ python3 -m http.server
 # then visit http://localhost:8000
 ```
 
+## macOS app
+
+Build a local macOS app bundle:
+
+```bash
+scripts/build-macos-app.sh
+```
+
+The app is created at `dist/BatchFrame.app`.
+
 ## Files
 
 - `index.html` — the app UI and logic
 - `support.js` — runtime support script loaded by the page
+- `macos/BatchFrameApp.swift` — native macOS WebView wrapper
+- `scripts/build-macos-app.sh` — macOS app build script
