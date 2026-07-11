@@ -475,6 +475,7 @@ class Component extends DCLogic {
 // ── Design constants @ 2880×2880 ──────────────────────────
     const C = 2880;
     const PREVIEW_SZ = 720;
+    const CONTENT_LONG = 1920;
     const PHOTO_FRAMES = {
       '16:9': {
         landscape: { x: 246, y: 767, w: 2388, h: 1346 },
@@ -485,7 +486,11 @@ class Component extends DCLogic {
         portrait:  { x: 644, y: 246, w: 1592, h: 2388 },
       },
     };
-    const CROP4_SCALE = 1920 / 2388;
+    // Crop 04 (the reference export) always renders the master's 2388px
+    // photo-frame long edge down to CONTENT_LONG px — deriving the scale
+    // from CONTENT_LONG (instead of a hardcoded 1920) keeps the signature
+    // proportional to the long edge if that export size ever changes.
+    const CROP4_SCALE = CONTENT_LONG / 2388;
     const SIG_W = 1194, SIG_H = 106;
     const FONT_SIZE = 18.48 / CROP4_SCALE;
     const SIG_EDGE = 37 / CROP4_SCALE;
@@ -1452,7 +1457,6 @@ class Component extends DCLogic {
       c3.getContext('2d').drawImage(pair, OUTPUT_W, 0, OUTPUT_W, OUTPUT_H, 0, 0, OUTPUT_W, OUTPUT_H);
       return [c1, c2, c3];
     }
-    const CONTENT_LONG = 1920;
     function masterContentOut(master, item) {
       const ph = getPhotoFrame(item);
       const contentShort = item.ratio === '3:2' ? 1280 : 1080;
