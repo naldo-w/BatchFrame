@@ -370,7 +370,7 @@ a.lbl:hover{color:var(--accent);transform:translateY(-1px)}
     </label>
     <div class="size-ctl ctl-size" style="gap: 8px">
       <span class="seg-lbl">Size</span>
-      <span class="lbl" id="sigSizeValue">23px</span>
+      <span class="lbl" id="sigSizeValue">18.48px</span>
       <input id="sigSizeRange" type="range" min="6" max="92" step="1" value="23">
     </div>
     <div class="size-ctl ctl-opacity" style="gap: 8px">
@@ -485,8 +485,10 @@ class Component extends DCLogic {
         portrait:  { x: 644, y: 246, w: 1592, h: 2388 },
       },
     };
-    const SIG_W = 1194, SIG_H = 106, FONT_SIZE = 22.9895;
-    const SIG_EDGE = 45; // signature offset from the photo frame edge (master px), measured to cap top / baseline
+    const CROP4_SCALE = 1920 / 2388;
+    const SIG_W = 1194, SIG_H = 106;
+    const FONT_SIZE = 18.48 / CROP4_SCALE;
+    const SIG_EDGE = 37 / CROP4_SCALE;
     const LETTER_SP = FONT_SIZE * 0.3;
     const DEFAULT_SIGNATURE_FONT = 'Anybody';
     const GOOGLE_SIGNATURE_FONTS = ['Anybody', 'Bodoni Moda', 'Cormorant Garamond', 'DM Serif Display', 'EB Garamond', 'Libre Baskerville', 'Playfair Display', 'Space Grotesk', 'Unbounded', 'Urbanist'];
@@ -669,8 +671,12 @@ class Component extends DCLogic {
       localStorage.setItem('batchframe.signatureText', signatureText);
       renderAllRows();
     }
-    function signatureSizePx() {
+    function signatureMasterSizePx() {
       return Math.round((signatureImage ? SIG_H : FONT_SIZE) * signatureScale);
+    }
+    function signatureOutputSizePx() {
+      const px = (signatureImage ? SIG_H : FONT_SIZE) * signatureScale * CROP4_SCALE;
+      return Number(px.toFixed(2));
     }
     function syncSignatureControls() {
       if (document.activeElement !== sigFontInput) sigFontInput.value = signatureFontFamily;
@@ -679,8 +685,8 @@ class Component extends DCLogic {
       sigSizeRange.min = String(Math.round(sigBase * 0.25));
       sigSizeRange.max = String(Math.round(sigBase * 4));
       sigSizeRange.step = '1';
-      sigSizeRange.value = String(signatureSizePx());
-      sigSizeValue.textContent = `${signatureSizePx()}px`;
+      sigSizeRange.value = String(signatureMasterSizePx());
+      sigSizeValue.textContent = `${signatureOutputSizePx()}px`;
       sigOpacityRange.value = String(Math.round(signatureOpacity * 100));
       sigOpacityValue.textContent = `${Math.round(signatureOpacity * 100)}%`;
       sigAssetStatus.textContent = signatureImage ? signatureImageName || 'PNG signature' : 'Font signature';
@@ -1345,8 +1351,7 @@ class Component extends DCLogic {
       const mark = measureSignatureMark(ctx, sig, boxW, boxH);
       ctx.save();
       ctx.globalAlpha = signatureOpacity;
-      // Alignment spec: inside CROP 04, horizontally centered at 25% (left) / 75% (right),
-      // 45px from the frame edge (top/bottom), leading-trim: both; text-edge: cap.
+      // Crop 04 baseline: 18.48 px type and 37 px edge offset at a 1920 px long edge.
       if (isPortrait) {
         // Rotated -90deg: the 25%/75% centering runs along the photo height,
         // and the 45px edge offset applies to the left/right frame edges.
