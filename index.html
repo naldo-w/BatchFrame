@@ -174,9 +174,10 @@ a.lbl:hover{color:var(--accent);transform:translateY(-1px)}
 .sig-input:focus{border:1px solid var(--accent);background:rgba(195,229,242,.16)}
 .minigrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .orient-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.pos-btn,.o1-btn{font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);background:transparent;border:1px solid var(--line-strong);height:var(--ctl-h);padding:0 4px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;text-align:center;line-height:1;transition:background .14s ease,color .14s ease,border-color .14s ease}
-.pos-btn:hover,.o1-btn:hover{color:var(--ink);border-color:var(--ink)}
-.pos-btn.on,.o1-btn.on{background:var(--accent);border:1px solid var(--line-strong);color:var(--accent-ink)}
+.transform-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pos-btn,.o1-btn,.ratio-btn,.transform-btn{font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);background:transparent;border:1px solid var(--line-strong);height:var(--ctl-h);padding:0 4px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;text-align:center;line-height:1;transition:background .14s ease,color .14s ease,border-color .14s ease}
+.pos-btn:hover,.o1-btn:hover,.ratio-btn:hover,.transform-btn:hover{color:var(--ink);border-color:var(--ink)}
+.pos-btn.on,.o1-btn.on,.ratio-btn.on,.transform-btn.on{background:var(--accent);border:1px solid var(--line-strong);color:var(--accent-ink)}
 .dl-btn{margin-top:auto;width:100%;font-family:var(--font-mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-ink);background:var(--accent);border:1px solid var(--line-strong);padding:12px 0;cursor:pointer;transition:background .14s ease,border-color .14s ease,color .14s ease,transform .12s ease,filter .16s ease}
 .dl-btn:hover{background:var(--accent);border-color:var(--line-strong);color:var(--accent-ink);filter:brightness(.94);transform:translateY(-1px)}
 
@@ -210,6 +211,7 @@ a.lbl:hover{color:var(--accent);transform:translateY(-1px)}
 .col-frame[data-output-index="3"] .cap{width:100%}
 .c4-cv{aspect-ratio:auto!important;width:100%;height:auto;align-self:center}
 .c4-cv.portrait{width:56.25%}
+.c4-cv.portrait.ratio-3-2{width:66.6667%}
 
 /* ── Empty state ──────────────────────────── */
 .empty{margin:36px 0;flex:1;display:grid;place-items:center;border:1px solid var(--line)}
@@ -473,9 +475,15 @@ class Component extends DCLogic {
 // ── Design constants @ 2880×2880 ──────────────────────────
     const C = 2880;
     const PREVIEW_SZ = 720;
-    const PHOTO1 = {
-      landscape: { x: 246, y: 767, w: 2388, h: 1346 },
-      portrait:  { x: 767, y: 246, w: 1346, h: 2388 },
+    const PHOTO_FRAMES = {
+      '16:9': {
+        landscape: { x: 246, y: 767, w: 2388, h: 1346 },
+        portrait:  { x: 767, y: 246, w: 1346, h: 2388 },
+      },
+      '3:2': {
+        landscape: { x: 246, y: 644, w: 2388, h: 1592 },
+        portrait:  { x: 644, y: 246, w: 1592, h: 2388 },
+      },
     };
     const SIG_W = 1194, SIG_H = 106, FONT_SIZE = 22.9895;
     const SIG_EDGE = 45; // signature offset from the photo frame edge (master px), measured to cap top / baseline
@@ -505,34 +513,29 @@ class Component extends DCLogic {
 
     const OUTPUT_W = 1080;
     const OUTPUT_H = 1440;
+    const PAIR_W = OUTPUT_W * 2;
     const OUTPUT_EDGE = 45;
-    const OUTPUT_INNER_H = OUTPUT_H - OUTPUT_EDGE * 2;
     function centeredRect(cx, cy, w, h) { return { x: cx - w / 2, y: cy - h / 2, w, h }; }
-    function c1Crop(ph) {
-      const scale = Math.min((OUTPUT_W - OUTPUT_EDGE * 2) / ph.w, (OUTPUT_H - OUTPUT_EDGE * 2) / ph.h);
-      return centeredRect(ph.x + ph.w / 2, ph.y + ph.h / 2, OUTPUT_W / scale, OUTPUT_H / scale);
+    function getPhotoFrame(item) { return PHOTO_FRAMES[item.ratio || '16:9'][item.orient1]; }
+    function fitCrop(ph, outW, outH) {
+      const scale = Math.min((outW - OUTPUT_EDGE * 2) / ph.w, (outH - OUTPUT_EDGE * 2) / ph.h);
+      return centeredRect(ph.x + ph.w / 2, ph.y + ph.h / 2, outW / scale, outH / scale);
     }
-    function getCrops(orient) {
-      const ph = PHOTO1[orient];
-      // Crop 02/03 retain an exact 45 px frame on the final output's top and bottom edges.
-      const frameSource = ph.h * OUTPUT_EDGE / OUTPUT_INNER_H;
-      const stripH = ph.h + frameSource * 2;
-      const stripW = stripH * OUTPUT_W / OUTPUT_H;
-      if (orient === 'portrait') {
-        const frameSourceX = ph.w * OUTPUT_EDGE / OUTPUT_INNER_H;
-        const rotatedW = ph.w + frameSourceX * 2;
-        const rotatedH = rotatedW * OUTPUT_W / OUTPUT_H;
-        return {
-          c1: c1Crop(ph),
-          c2: { x: ph.x - frameSourceX, y: ph.y + ph.h - rotatedH, w: rotatedW, h: rotatedH },
-          c3: { x: ph.x - frameSourceX, y: ph.y, w: rotatedW, h: rotatedH },
-        };
-      }
-      const left = ph.x + (ph.w - stripW * 2) / 2;
+    function rotateRectBack(r) { return { x: r.y, y: C - r.x - r.w, w: r.h, h: r.w }; }
+    function getCrops(item) {
+      const ph = getPhotoFrame(item);
+      const c1 = fitCrop(ph, OUTPUT_W, OUTPUT_H);
+      const pairPh = item.orient1 === 'portrait'
+        ? { x: C - ph.y - ph.h, y: ph.x, w: ph.h, h: ph.w }
+        : ph;
+      const pair = fitCrop(pairPh, PAIR_W, OUTPUT_H);
+      const left = { x: pair.x, y: pair.y, w: pair.w / 2, h: pair.h };
+      const right = { x: pair.x + pair.w / 2, y: pair.y, w: pair.w / 2, h: pair.h };
       return {
-        c1: c1Crop(ph),
-        c2: { x: left, y: ph.y - frameSource, w: stripW, h: stripH },
-        c3: { x: left + stripW, y: ph.y - frameSource, w: stripW, h: stripH },
+        c1,
+        c2: item.orient1 === 'portrait' ? rotateRectBack(left) : left,
+        c3: item.orient1 === 'portrait' ? rotateRectBack(right) : right,
+        pair,
       };
     }
 
@@ -958,7 +961,11 @@ class Component extends DCLogic {
         Promise.all([fileToImage(file), getShotDate(file)])
           .then(([img, shotDate]) => {
             const orient1 = img.width >= img.height ? 'landscape' : 'portrait';
-            queue.push({ file, name: file.name, img, shotDate, sigPos: 'br', orient1, view: { zoom: 1, x: 0, y: 0 } });
+            queue.push({
+              file, name: file.name, img, shotDate, sigPos: 'br', orient1,
+              ratio: '16:9', rotation: 0, flipH: false, flipV: false,
+              view: { zoom: 1, x: 0, y: 0 },
+            });
             loaded++;
             setUploadItem(i, 'done');
           })
@@ -1028,6 +1035,20 @@ class Component extends DCLogic {
                 <button class="o1-btn${item.orient1 === 'portrait' ? ' on' : ''}" type="button" data-o="portrait">Port</button>
               </div>
             </div>
+            <div class="field">
+              <span class="field-lbl">Ratio</span>
+              <div class="orient-row">
+                ${['16:9', '3:2'].map(r => `<button class="ratio-btn${item.ratio === r ? ' on' : ''}" type="button" data-ratio="${r}">${r}</button>`).join('')}
+              </div>
+            </div>
+            <div class="field">
+              <span class="field-lbl">Transform</span>
+              <div class="transform-row">
+                <button class="transform-btn" type="button" data-transform="rotate" title="Rotate 90 degrees" aria-label="Rotate 90 degrees">↻ 90°</button>
+                <button class="transform-btn${item.flipH ? ' on' : ''}" type="button" data-transform="flip-h" title="Mirror horizontally" aria-label="Mirror horizontally">↔ H</button>
+                <button class="transform-btn${item.flipV ? ' on' : ''}" type="button" data-transform="flip-v" title="Mirror vertically" aria-label="Mirror vertically">↕ V</button>
+              </div>
+            </div>
             <button class="dl-btn" type="button">Export set</button>
           </div>
           <div class="row-proof"></div>
@@ -1053,6 +1074,19 @@ class Component extends DCLogic {
           queue[i].orient1 = b.dataset.o; clampView(queue[i]);
           meta.querySelectorAll('.o1-btn').forEach(x => x.classList.remove('on'));
           b.classList.add('on'); renderRow(i);
+        }));
+        meta.querySelectorAll('.ratio-btn').forEach(b => b.addEventListener('click', () => {
+          queue[i].ratio = b.dataset.ratio; clampView(queue[i]);
+          meta.querySelectorAll('.ratio-btn').forEach(x => x.classList.remove('on'));
+          b.classList.add('on'); renderRow(i);
+        }));
+        meta.querySelectorAll('.transform-btn').forEach(b => b.addEventListener('click', () => {
+          const item = queue[i];
+          if (b.dataset.transform === 'rotate') item.rotation = (item.rotation + 90) % 360;
+          if (b.dataset.transform === 'flip-h') { item.flipH = !item.flipH; b.classList.toggle('on', item.flipH); }
+          if (b.dataset.transform === 'flip-v') { item.flipV = !item.flipV; b.classList.toggle('on', item.flipV); }
+          item.view.x = 0; item.view.y = 0;
+          clampView(item); renderRow(i);
         }));
         meta.querySelector('.dl-btn').addEventListener('click', () => downloadRow(i));
 
@@ -1099,14 +1133,22 @@ class Component extends DCLogic {
 
     // ── Master proof drag / zoom ──────────────────────────────
     const ZOOM_MAX = 8;
+    function getRenderDimensions(item) {
+      const quarterTurn = item.rotation % 180 !== 0;
+      return {
+        width: quarterTurn ? item.img.height : item.img.width,
+        height: quarterTurn ? item.img.width : item.img.height,
+      };
+    }
     function clampView(item) {
       const v = item.view;
       if (!v || !item.img) return;
       v.zoom = Math.min(ZOOM_MAX, Math.max(1, v.zoom));
-      const ph = PHOTO1[item.orient1];
-      const sc = Math.max(ph.w / item.img.width, ph.h / item.img.height) * v.zoom;
-      const maxX = (item.img.width * sc - ph.w) / 2;
-      const maxY = (item.img.height * sc - ph.h) / 2;
+      const ph = getPhotoFrame(item);
+      const dims = getRenderDimensions(item);
+      const sc = Math.max(ph.w / dims.width, ph.h / dims.height) * v.zoom;
+      const maxX = (dims.width * sc - ph.w) / 2;
+      const maxY = (dims.height * sc - ph.h) / 2;
       v.x = Math.min(maxX, Math.max(-maxX, v.x));
       v.y = Math.min(maxY, Math.max(-maxY, v.y));
     }
@@ -1122,10 +1164,11 @@ class Component extends DCLogic {
     const CROP_LABELS = { c1: 'CROP 01', c2: 'CROP 02', c3: 'CROP 03', c4: 'CROP 04' };
     const GUIDE_FRACTIONS = { center: [0.5], thirds: [1 / 3, 2 / 3], golden: [0.381966, 0.618034], silver: [0.414214, 0.585786] };
     function rectPct(r) { return `left:${r.x / C * 100}%;top:${r.y / C * 100}%;width:${r.w / C * 100}%;height:${r.h / C * 100}%;`; }
-    function cropBoxesHTML(orient1) {
-      const crops = getCrops(orient1);
+    function cropBoxesHTML(item) {
+      const crops = getCrops(item);
+      const ph = getPhotoFrame(item);
       let html = ['c1', 'c2', 'c3'].map(k => `<div class="cropbox ${k}" style="${rectPct(crops[k])}"><span class="cropbox-lbl">${CROP_LABELS[k]}</span></div>`).join('');
-      html += `<div class="cropbox c4" style="${rectPct(PHOTO1[orient1])}"><span class="cropbox-lbl">${CROP_LABELS.c4}</span></div>`;
+      html += `<div class="cropbox c4" style="${rectPct(ph)}"><span class="cropbox-lbl">${CROP_LABELS.c4}</span></div>`;
       return html;
     }
     function updatePreviewExportNames(row, names) {
@@ -1139,7 +1182,7 @@ class Component extends DCLogic {
       if (editorIndex < 0) { editorOverlay.innerHTML = ''; return; }
       const item = queue[editorIndex];
       let html = '';
-      if (showCrops) html += cropBoxesHTML(item.orient1);
+      if (showCrops) html += cropBoxesHTML(item);
       if (guideModes.size) {
         let lines = '';
         guideModes.forEach(mode => {
@@ -1149,13 +1192,13 @@ class Component extends DCLogic {
           if (mode === 'diagonal') lines += '<svg class="guide-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><line x1="0" y1="0" x2="100" y2="100"></line><line x1="100" y1="0" x2="0" y2="100"></line></svg>';
           if (mode === 'safe') lines += '<div class="guide-safe"></div>';
         });
-        html += `<div class="guides" style="${rectPct(PHOTO1[item.orient1])}">${lines}</div>`;
+        html += `<div class="guides" style="${rectPct(getPhotoFrame(item))}">${lines}</div>`;
       }
       editorOverlay.innerHTML = html;
     }
-    function renderMasterOverlay(row, orient1) {
+    function renderMasterOverlay(row, item) {
       const overlay = row.querySelector('.master-overlay');
-      if (overlay) overlay.innerHTML = showCrops ? cropBoxesHTML(orient1) : '';
+      if (overlay) overlay.innerHTML = showCrops ? cropBoxesHTML(item) : '';
     }
     function setCropBoxesVisible(visible) {
       showCrops = !!visible;
@@ -1166,7 +1209,7 @@ class Component extends DCLogic {
       renderEditorOverlay();
       Array.from(rowsWrap.children).forEach((row, i) => {
         const item = queue[i];
-        if (item) renderMasterOverlay(row, item.orient1);
+        if (item) renderMasterOverlay(row, item);
       });
     }
     function syncEditorSig() {
@@ -1194,8 +1237,7 @@ class Component extends DCLogic {
     function drawEditorCanvas() {
       if (editorIndex < 0) return;
       const item = queue[editorIndex];
-      const isPortrait = item.orient1 === 'portrait';
-      const master = buildMaster(item.img, PHOTO1[item.orient1], item.sigPos, signatureText, isPortrait, item.view);
+      const master = buildMaster(item);
       const cssW = editorCanvas.getBoundingClientRect().width || EDIT_SZ;
       const px = Math.min(C, Math.round(cssW * (window.devicePixelRatio || 1)));
       drawScaled(editorCanvas, master, px, px);
@@ -1205,12 +1247,14 @@ class Component extends DCLogic {
       if (editorIndex < 0 || !editorScale) return;
       const item = queue[editorIndex];
       if (!item.img) { editorScale.innerHTML = ''; return; }
-      const ph = PHOTO1[item.orient1];
-      const cover = Math.max(ph.w / item.img.width, ph.h / item.img.height);
-      const crops = getCrops(item.orient1);
+      const ph = getPhotoFrame(item);
+      const dims = getRenderDimensions(item);
+      const cover = Math.max(ph.w / dims.width, ph.h / dims.height);
+      const crops = getCrops(item);
       editorScale.innerHTML = ['c1', 'c2', 'c3'].map(k => {
-        const rotated = item.orient1 === 'portrait' && k !== 'c1';
-        const outputScale = rotated ? OUTPUT_H / crops[k].w : OUTPUT_W / crops[k].w;
+        const outputScale = k === 'c1'
+          ? OUTPUT_W / crops.c1.w
+          : (item.orient1 === 'portrait' ? OUTPUT_H / crops[k].w : OUTPUT_W / crops[k].w);
         const pct = Math.round(cover * item.view.zoom * outputScale * 100);
         return `<span class="editor-scale-item${pct > 100 ? ' over' : ''}">${CROP_LABELS[k]} ${pct}%</span>`;
       }).join('');
@@ -1248,7 +1292,7 @@ class Component extends DCLogic {
       const k = C / rect.width;
       const px = (e.clientX - rect.left) * k;
       const py = (e.clientY - rect.top) * k;
-      const ph = PHOTO1[item.orient1];
+      const ph = getPhotoFrame(item);
       const r = newZoom / oldZoom;
       v.x = (px - ph.x - ph.w / 2) * (1 - r) + v.x * r;
       v.y = (py - ph.y - ph.h / 2) * (1 - r) + v.y * r;
@@ -1262,35 +1306,36 @@ class Component extends DCLogic {
       const item = queue[i];
       const row = rowsWrap.children[i];
       if (!row) return;
-      const { orient1, sigPos, img } = item;
-      const isPortrait = orient1 === 'portrait';
-      const crops = getCrops(orient1);
       const names = buildOutputNames(queue)[i];
       if (names) updatePreviewExportNames(row, names);
-      const master = buildMaster(img, PHOTO1[orient1], sigPos, signatureText, isPortrait, item.view);
+      const master = buildMaster(item);
       const masterPreview = row.querySelector('.master-cv');
       drawScaled(masterPreview, master, PREVIEW_SZ, PREVIEW_SZ);
-      renderMasterOverlay(row, orient1);
-      drawInto(row.querySelector('.c1-cv'), cropToPortrait(master, crops.c1, false));
-      drawInto(row.querySelector('.c2-cv'), cropToPortrait(master, crops.c2, isPortrait));
-      drawInto(row.querySelector('.c3-cv'), cropToPortrait(master, crops.c3, isPortrait));
-      const c4src = masterContentOut(master, PHOTO1[orient1], isPortrait);
+      renderMasterOverlay(row, item);
+      const portraitOutputs = buildPortraitOutputs(master, item);
+      drawInto(row.querySelector('.c1-cv'), portraitOutputs[0]);
+      drawInto(row.querySelector('.c2-cv'), portraitOutputs[1]);
+      drawInto(row.querySelector('.c3-cv'), portraitOutputs[2]);
+      const c4src = masterContentOut(master, item);
       const c4cv = row.querySelector('.c4-cv');
-      c4cv.classList.toggle('portrait', isPortrait);
-      c4cv.classList.toggle('landscape', !isPortrait);
+      c4cv.classList.toggle('portrait', item.orient1 === 'portrait');
+      c4cv.classList.toggle('landscape', item.orient1 !== 'portrait');
+      c4cv.classList.toggle('ratio-3-2', item.ratio === '3:2');
       c4cv.width = c4src.width; c4cv.height = c4src.height;
       c4cv.getContext('2d').drawImage(c4src, 0, 0);
     }
 
-    function buildMaster(img, ph, pos, rawSig, isPortrait, view) {
+    function buildMaster(item) {
+      const ph = getPhotoFrame(item);
+      const isPortrait = item.orient1 === 'portrait';
       const oc = document.createElement('canvas');
       oc.width = C; oc.height = C;
       const ctx = oc.getContext('2d');
       ctx.fillStyle = frameTone === 'black' ? '#000' : '#fff';
       ctx.fillRect(0, 0, C, C);
-      if (img) coverImg(ctx, img, ph.x, ph.y, ph.w, ph.h, view);
+      if (item.img) coverImg(ctx, item, ph.x, ph.y, ph.w, ph.h);
       else { ctx.fillStyle = frameTone === 'black' ? '#fff' : '#000'; ctx.fillRect(ph.x, ph.y, ph.w, ph.h); }
-      drawSig(ctx, ph, pos, rawSig, isPortrait);
+      drawSig(ctx, ph, item.sigPos, signatureText, isPortrait);
       return oc;
     }
     function drawSig(ctx, ph, pos, rawSig, isPortrait) {
@@ -1375,28 +1420,39 @@ class Component extends DCLogic {
       ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(src, sx, sy, ex - sx, ey - sy, dx, dy, dw, dh);
     }
-    function cropToPortrait(src, crop, rotCW = false) {
-      if (!rotCW) {
-        const out = document.createElement('canvas');
-        out.width = OUTPUT_W; out.height = OUTPUT_H;
-        drawMasterRegion(out.getContext('2d'), src, crop, OUTPUT_W, OUTPUT_H);
-        return out;
-      }
-      const rotatedSource = document.createElement('canvas');
-      rotatedSource.width = OUTPUT_H; rotatedSource.height = OUTPUT_W;
-      drawMasterRegion(rotatedSource.getContext('2d'), src, crop, OUTPUT_H, OUTPUT_W);
+    function rotateCanvasCW(src) {
       const out = document.createElement('canvas');
-      out.width = OUTPUT_W; out.height = OUTPUT_H;
+      out.width = src.height; out.height = src.width;
       const ctx = out.getContext('2d');
-      ctx.translate(OUTPUT_W, 0);
+      ctx.translate(out.width, 0);
       ctx.rotate(Math.PI / 2);
-      ctx.drawImage(rotatedSource, 0, 0);
+      ctx.drawImage(src, 0, 0);
       return out;
     }
-    const CONTENT_LONG = 1920, CONTENT_SHORT = 1080;
-    function masterContentOut(master, ph, isPortrait) {
-      const ow = isPortrait ? CONTENT_SHORT : CONTENT_LONG;
-      const oh = isPortrait ? CONTENT_LONG : CONTENT_SHORT;
+    function buildPortraitOutputs(master, item) {
+      const crops = getCrops(item);
+      const c1 = document.createElement('canvas');
+      c1.width = OUTPUT_W; c1.height = OUTPUT_H;
+      drawMasterRegion(c1.getContext('2d'), master, crops.c1, OUTPUT_W, OUTPUT_H);
+
+      const pairSource = item.orient1 === 'portrait' ? rotateCanvasCW(master) : master;
+      const pair = document.createElement('canvas');
+      pair.width = PAIR_W; pair.height = OUTPUT_H;
+      drawMasterRegion(pair.getContext('2d'), pairSource, crops.pair, PAIR_W, OUTPUT_H);
+      const c2 = document.createElement('canvas');
+      const c3 = document.createElement('canvas');
+      c2.width = c3.width = OUTPUT_W;
+      c2.height = c3.height = OUTPUT_H;
+      c2.getContext('2d').drawImage(pair, 0, 0, OUTPUT_W, OUTPUT_H, 0, 0, OUTPUT_W, OUTPUT_H);
+      c3.getContext('2d').drawImage(pair, OUTPUT_W, 0, OUTPUT_W, OUTPUT_H, 0, 0, OUTPUT_W, OUTPUT_H);
+      return [c1, c2, c3];
+    }
+    const CONTENT_LONG = 1920;
+    function masterContentOut(master, item) {
+      const ph = getPhotoFrame(item);
+      const contentShort = item.ratio === '3:2' ? 1280 : 1080;
+      const ow = item.orient1 === 'portrait' ? contentShort : CONTENT_LONG;
+      const oh = item.orient1 === 'portrait' ? CONTENT_LONG : contentShort;
       const out = document.createElement('canvas');
       out.width = ow; out.height = oh;
       const ctx = out.getContext('2d');
@@ -1404,16 +1460,21 @@ class Component extends DCLogic {
       ctx.drawImage(master, ph.x, ph.y, ph.w, ph.h, 0, 0, ow, oh);
       return out;
     }
-    function coverImg(ctx, img, x, y, w, h, view) {
+    function coverImg(ctx, item, x, y, w, h) {
+      const { img, view } = item;
+      const dims = getRenderDimensions(item);
       const zoom = view ? view.zoom : 1;
-      const sc = Math.max(w / img.width, h / img.height) * zoom;
-      const sw = img.width * sc, sh = img.height * sc;
+      const sc = Math.max(w / dims.width, h / dims.height) * zoom;
+      const sw = dims.width * sc, sh = dims.height * sc;
       const maxX = (sw - w) / 2, maxY = (sh - h) / 2;
       const ox = view ? Math.min(maxX, Math.max(-maxX, view.x)) : 0;
       const oy = view ? Math.min(maxY, Math.max(-maxY, view.y)) : 0;
       ctx.save();
       ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
-      ctx.drawImage(img, x + (w - sw) / 2 + ox, y + (h - sh) / 2 + oy, sw, sh);
+      ctx.translate(x + w / 2 + ox, y + h / 2 + oy);
+      ctx.scale(item.flipH ? -1 : 1, item.flipV ? -1 : 1);
+      ctx.rotate(item.rotation * Math.PI / 180);
+      ctx.drawImage(img, -img.width * sc / 2, -img.height * sc / 2, img.width * sc, img.height * sc);
       ctx.restore();
     }
     function drawInto(dest, src) { dest.width = src.width; dest.height = src.height; dest.getContext('2d').drawImage(src, 0, 0); }
@@ -1475,15 +1536,11 @@ class Component extends DCLogic {
       });
     }
     function buildOutputs(item) {
-      const { img, sigPos, orient1 } = item;
-      const isPortrait = orient1 === 'portrait';
-      const master = buildMaster(img, PHOTO1[orient1], sigPos, signatureText, isPortrait, item.view);
-      const crops = getCrops(orient1);
+      const master = buildMaster(item);
+      const portraitOutputs = buildPortraitOutputs(master, item);
       return [
-        cropToPortrait(master, crops.c1, false),
-        cropToPortrait(master, crops.c2, isPortrait),
-        cropToPortrait(master, crops.c3, isPortrait),
-        masterContentOut(master, PHOTO1[orient1], isPortrait),
+        ...portraitOutputs,
+        masterContentOut(master, item),
       ];
     }
     async function downloadRow(i) {
