@@ -196,7 +196,8 @@ a.lbl:hover{color:var(--accent);transform:translateY(-1px)}
 .cap{display:flex;align-items:baseline;justify-content:space-between;gap:10px;min-width:0}
 .cap-lbl{font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink);flex-shrink:0}
 .export-name{font-family:var(--font-mono);font-size:9px;letter-spacing:.05em;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right;min-width:0}
-.cell canvas{width:100%;aspect-ratio:1;display:block;outline:1px solid var(--accent);cursor:zoom-in;transition:outline-color .18s ease,transform .18s ease,filter .18s ease}
+.cell canvas{width:100%;aspect-ratio:3 / 4;display:block;outline:1px solid var(--accent);cursor:zoom-in;transition:outline-color .18s ease,transform .18s ease,filter .18s ease}
+.cell canvas.master-cv{aspect-ratio:1}
 .cell:hover canvas{outline-color:var(--accent);transform:translateY(-2px);filter:saturate(1.03)}
 .master-stage{position:relative;display:block;transition:transform .18s ease,filter .18s ease}
 .cell:hover .master-stage{transform:translateY(-2px);filter:saturate(1.03)}
@@ -502,16 +503,38 @@ class Component extends DCLogic {
       ? document.fonts.load(signatureFontCSS()).then(() => document.fonts.ready).catch(() => {})
       : Promise.resolve();
 
-    const CC = (C - 1440) / 2;
-    const CROP_SZ = 2550.98;
-    const C1_CROP = { x: (C - CROP_SZ) / 2, y: (C - CROP_SZ) / 2, w: CROP_SZ, h: CROP_SZ };
-    function getCrops(orient) {
-      if (orient === 'portrait') {
-        return { c1: C1_CROP, c2: { x: CC, y: C - 1440, w: 1440, h: 1440 }, c3: { x: CC, y: 0, w: 1440, h: 1440 } };
-      }
-      return { c1: C1_CROP, c2: { x: 0, y: CC, w: 1440, h: 1440 }, c3: { x: C - 1440, y: CC, w: 1440, h: 1440 } };
+    const OUTPUT_W = 1080;
+    const OUTPUT_H = 1440;
+    const OUTPUT_EDGE = 45;
+    const OUTPUT_INNER_H = OUTPUT_H - OUTPUT_EDGE * 2;
+    function centeredRect(cx, cy, w, h) { return { x: cx - w / 2, y: cy - h / 2, w, h }; }
+    function c1Crop(ph) {
+      const scale = Math.min((OUTPUT_W - OUTPUT_EDGE * 2) / ph.w, (OUTPUT_H - OUTPUT_EDGE * 2) / ph.h);
+      return centeredRect(ph.x + ph.w / 2, ph.y + ph.h / 2, OUTPUT_W / scale, OUTPUT_H / scale);
     }
-    const OUTPUT = 1440;
+    function getCrops(orient) {
+      const ph = PHOTO1[orient];
+      // Crop 02/03 retain an exact 45 px frame on the final output's top and bottom edges.
+      const frameSource = ph.h * OUTPUT_EDGE / OUTPUT_INNER_H;
+      const stripH = ph.h + frameSource * 2;
+      const stripW = stripH * OUTPUT_W / OUTPUT_H;
+      if (orient === 'portrait') {
+        const frameSourceX = ph.w * OUTPUT_EDGE / OUTPUT_INNER_H;
+        const rotatedW = ph.w + frameSourceX * 2;
+        const rotatedH = rotatedW * OUTPUT_W / OUTPUT_H;
+        return {
+          c1: c1Crop(ph),
+          c2: { x: ph.x - frameSourceX, y: ph.y + ph.h - rotatedH, w: rotatedW, h: rotatedH },
+          c3: { x: ph.x - frameSourceX, y: ph.y, w: rotatedW, h: rotatedH },
+        };
+      }
+      const left = ph.x + (ph.w - stripW * 2) / 2;
+      return {
+        c1: c1Crop(ph),
+        c2: { x: left, y: ph.y - frameSource, w: stripW, h: stripH },
+        c3: { x: left + stripW, y: ph.y - frameSource, w: stripW, h: stripH },
+      };
+    }
 
     // ── State ─────────────────────────────────────────────────
     let queue = [];
@@ -1186,7 +1209,9 @@ class Component extends DCLogic {
       const cover = Math.max(ph.w / item.img.width, ph.h / item.img.height);
       const crops = getCrops(item.orient1);
       editorScale.innerHTML = ['c1', 'c2', 'c3'].map(k => {
-        const pct = Math.round(cover * item.view.zoom * (OUTPUT / crops[k].w) * 100);
+        const rotated = item.orient1 === 'portrait' && k !== 'c1';
+        const outputScale = rotated ? OUTPUT_H / crops[k].w : OUTPUT_W / crops[k].w;
+        const pct = Math.round(cover * item.view.zoom * outputScale * 100);
         return `<span class="editor-scale-item${pct > 100 ? ' over' : ''}">${CROP_LABELS[k]} ${pct}%</span>`;
       }).join('');
     }
@@ -1246,9 +1271,9 @@ class Component extends DCLogic {
       const masterPreview = row.querySelector('.master-cv');
       drawScaled(masterPreview, master, PREVIEW_SZ, PREVIEW_SZ);
       renderMasterOverlay(row, orient1);
-      drawInto(row.querySelector('.c1-cv'), cropTo1440(master, crops.c1, false));
-      drawInto(row.querySelector('.c2-cv'), cropTo1440(master, crops.c2, isPortrait));
-      drawInto(row.querySelector('.c3-cv'), cropTo1440(master, crops.c3, isPortrait));
+      drawInto(row.querySelector('.c1-cv'), cropToPortrait(master, crops.c1, false));
+      drawInto(row.querySelector('.c2-cv'), cropToPortrait(master, crops.c2, isPortrait));
+      drawInto(row.querySelector('.c3-cv'), cropToPortrait(master, crops.c3, isPortrait));
       const c4src = masterContentOut(master, PHOTO1[orient1], isPortrait);
       const c4cv = row.querySelector('.c4-cv');
       c4cv.classList.toggle('portrait', isPortrait);
@@ -1335,19 +1360,37 @@ class Component extends DCLogic {
       // Canvas letterSpacing adds a trailing space after the last glyph; nudge by half to keep true optical centering.
       ctx.fillText(sig, (LETTER_SP * signatureScale) / 2, 0, mark.w);
     }
-    function cropTo1440(src, crop, rotCW = false) {
-      const out = document.createElement('canvas');
-      out.width = OUTPUT; out.height = OUTPUT;
-      const ctx = out.getContext('2d');
-      if (rotCW) {
-        ctx.save();
-        ctx.translate(OUTPUT, 0);
-        ctx.rotate(Math.PI / 2);
-        ctx.drawImage(src, crop.x, crop.y, crop.w, crop.h, 0, 0, OUTPUT, OUTPUT);
-        ctx.restore();
-      } else {
-        ctx.drawImage(src, crop.x, crop.y, crop.w, crop.h, 0, 0, OUTPUT, OUTPUT);
+    function drawMasterRegion(ctx, src, crop, outW, outH) {
+      ctx.fillStyle = frameTone === 'black' ? '#000' : '#fff';
+      ctx.fillRect(0, 0, outW, outH);
+      const sx = Math.max(0, crop.x);
+      const sy = Math.max(0, crop.y);
+      const ex = Math.min(src.width, crop.x + crop.w);
+      const ey = Math.min(src.height, crop.y + crop.h);
+      if (ex <= sx || ey <= sy) return;
+      const dx = (sx - crop.x) / crop.w * outW;
+      const dy = (sy - crop.y) / crop.h * outH;
+      const dw = (ex - sx) / crop.w * outW;
+      const dh = (ey - sy) / crop.h * outH;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(src, sx, sy, ex - sx, ey - sy, dx, dy, dw, dh);
+    }
+    function cropToPortrait(src, crop, rotCW = false) {
+      if (!rotCW) {
+        const out = document.createElement('canvas');
+        out.width = OUTPUT_W; out.height = OUTPUT_H;
+        drawMasterRegion(out.getContext('2d'), src, crop, OUTPUT_W, OUTPUT_H);
+        return out;
       }
+      const rotatedSource = document.createElement('canvas');
+      rotatedSource.width = OUTPUT_H; rotatedSource.height = OUTPUT_W;
+      drawMasterRegion(rotatedSource.getContext('2d'), src, crop, OUTPUT_H, OUTPUT_W);
+      const out = document.createElement('canvas');
+      out.width = OUTPUT_W; out.height = OUTPUT_H;
+      const ctx = out.getContext('2d');
+      ctx.translate(OUTPUT_W, 0);
+      ctx.rotate(Math.PI / 2);
+      ctx.drawImage(rotatedSource, 0, 0);
       return out;
     }
     const CONTENT_LONG = 1920, CONTENT_SHORT = 1080;
@@ -1373,7 +1416,7 @@ class Component extends DCLogic {
       ctx.drawImage(img, x + (w - sw) / 2 + ox, y + (h - sh) / 2 + oy, sw, sh);
       ctx.restore();
     }
-    function drawInto(dest, src) { dest.width = OUTPUT; dest.height = OUTPUT; dest.getContext('2d').drawImage(src, 0, 0); }
+    function drawInto(dest, src) { dest.width = src.width; dest.height = src.height; dest.getContext('2d').drawImage(src, 0, 0); }
     function drawScaled(dest, src, w, h) { dest.width = w; dest.height = h; const ctx = dest.getContext('2d'); ctx.imageSmoothingQuality = 'high'; ctx.drawImage(src, 0, 0, w, h); }
 
     // ── Export ────────────────────────────────────────────────
@@ -1437,9 +1480,9 @@ class Component extends DCLogic {
       const master = buildMaster(img, PHOTO1[orient1], sigPos, signatureText, isPortrait, item.view);
       const crops = getCrops(orient1);
       return [
-        cropTo1440(master, crops.c1, false),
-        cropTo1440(master, crops.c2, isPortrait),
-        cropTo1440(master, crops.c3, isPortrait),
+        cropToPortrait(master, crops.c1, false),
+        cropToPortrait(master, crops.c2, isPortrait),
+        cropToPortrait(master, crops.c3, isPortrait),
         masterContentOut(master, PHOTO1[orient1], isPortrait),
       ];
     }
