@@ -101,6 +101,8 @@ a.lbl:hover{color:var(--accent);transform:translateY(-1px)}
 .cb-actions .btn{flex:1;white-space:nowrap}
 .btn{font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink);background:transparent;border:1px solid var(--line-strong);height:var(--ctl-h);padding:0 var(--btn-px);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:background .14s ease,color .14s ease,border-color .14s ease,transform .12s ease,filter .16s ease}
 .btn:hover{border-color:var(--ink);background:var(--field);transform:translateY(-1px)}
+.btn.armed{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.armed:hover{background:var(--accent);border-color:var(--accent);filter:brightness(.94)}
 .btn.accent{background:var(--accent);border:1px solid var(--line-strong);color:var(--accent-ink)}
 .btn.accent:hover{filter:brightness(.94);background:var(--accent)}
 .btn:disabled{opacity:.4;cursor:default;transform:none;filter:none;border-style:dashed}
@@ -453,12 +455,12 @@ a.lbl:hover{color:var(--accent);transform:translateY(-1px)}
       <div class="ectl-group">
         <span class="ectl-lbl">Guide</span>
         <div class="guide-select" id="guideSelect">
-          <button class="gbtn" type="button" data-guide="center">Center</button>
-          <button class="gbtn" type="button" data-guide="thirds">Thirds</button>
-          <button class="gbtn" type="button" data-guide="golden">Golden</button>
+          <button class="gbtn on" type="button" data-guide="center">Center</button>
+          <button class="gbtn on" type="button" data-guide="thirds">Thirds</button>
+          <button class="gbtn on" type="button" data-guide="golden">Golden</button>
           <button class="gbtn" type="button" data-guide="silver">Silver</button>
-          <button class="gbtn" type="button" data-guide="diagonal">Diagonal</button>
-          <button class="gbtn" type="button" data-guide="safe">Safe</button>
+          <button class="gbtn on" type="button" data-guide="diagonal">Diagonal</button>
+          <button class="gbtn on" type="button" data-guide="safe">Safe</button>
         </div>
       </div>
     </div>
@@ -548,7 +550,7 @@ class Component extends DCLogic {
     let uiTheme = localStorage.getItem('batchframe.theme') || 'light';
     let editorIndex = -1;
     let showCrops = true;
-    let guideModes = new Set();
+    let guideModes = new Set(['center', 'thirds', 'golden', 'diagonal', 'safe']);
     let signatureFontInputTimer = 0;
 
     // ── DOM ───────────────────────────────────────────────────
@@ -838,9 +840,24 @@ class Component extends DCLogic {
     window.addEventListener('dragleave', e => { if (!dragHasFiles(e)) return; if (--dragDepth <= 0) { dragDepth = 0; dropOverlay.classList.remove('show'); } });
     window.addEventListener('drop', e => { if (!dragHasFiles(e)) return; e.preventDefault(); dragDepth = 0; dropOverlay.classList.remove('show'); if (e.dataTransfer.files.length) ingest(e.dataTransfer.files); });
 
+    let clearArmed = false;
+    let clearArmTimer = null;
+    function resetClearArm() {
+      clearArmed = false;
+      window.clearTimeout(clearArmTimer);
+      btnClear.textContent = 'Clear';
+      btnClear.classList.remove('armed');
+    }
     btnClear.addEventListener('click', () => {
       if (!queue.length) return;
-      if (!confirm('Clear all loaded images? This cannot be undone.')) return;
+      if (!clearArmed) {
+        clearArmed = true;
+        btnClear.textContent = 'Confirm?';
+        btnClear.classList.add('armed');
+        clearArmTimer = window.setTimeout(resetClearArm, 3000);
+        return;
+      }
+      resetClearArm();
       queue = [];
       rebuildRows();
     });
@@ -1101,6 +1118,7 @@ class Component extends DCLogic {
       });
       btnAll.disabled = !queue.length;
       btnClear.disabled = !queue.length;
+      resetClearArm();
       updateEmpty();
       syncExportLabels();
     }
