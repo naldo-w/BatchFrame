@@ -741,6 +741,12 @@ class Component extends DCLogic {
       queue.forEach((_, i) => renderRow(i));
       if (editorIndex >= 0) renderEditor();
     }
+    let renderAllRowsQueued = false;
+    function scheduleRenderAllRows() {
+      if (renderAllRowsQueued) return;
+      renderAllRowsQueued = true;
+      requestAnimationFrame(() => { renderAllRowsQueued = false; renderAllRows(); });
+    }
     function showStatusTip(anchor, message, type = 'success') {
       if (!anchor || !statusTip) return;
       const rect = anchor.getBoundingClientRect();
@@ -821,13 +827,13 @@ class Component extends DCLogic {
       signatureScale = Math.min(4, Math.max(0.25, Number(sigSizeRange.value) / sigBase));
       localStorage.setItem('batchframe.signatureScale', String(signatureScale));
       syncSignatureControls();
-      renderAllRows();
+      scheduleRenderAllRows();
     });
     sigOpacityRange.addEventListener('input', () => {
       signatureOpacity = Number(sigOpacityRange.value) / 100;
       localStorage.setItem('batchframe.signatureOpacity', String(signatureOpacity));
       syncSignatureControls();
-      renderAllRows();
+      scheduleRenderAllRows();
     });
     syncSignatureControls();
     signatureFontReady = loadSignatureFont(signatureFontFamily);
@@ -1286,23 +1292,77 @@ class Component extends DCLogic {
     function renderEditor() { drawEditorCanvas(); renderEditorOverlay(); }
 
     let eDragging = false, eLastX = 0, eLastY = 0;
+    const ePointers = new Map(); // pointerId -> {x, y}
+    let ePinchDist = 0;
+    let eEditorFrameQueued = false;
+    function scheduleEditorRender() {
+      if (eEditorFrameQueued) return;
+      eEditorFrameQueued = true;
+      requestAnimationFrame(() => {
+        eEditorFrameQueued = false;
+        drawEditorCanvas(); scheduleRender(editorIndex);
+      });
+    }
+    function pinchDistance() {
+      const pts = [...ePointers.values()];
+      return Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+    }
     editorCanvas.addEventListener('pointerdown', e => {
       if (editorIndex < 0 || !queue[editorIndex].img) return;
-      eDragging = true; eLastX = e.clientX; eLastY = e.clientY;
       editorCanvas.setPointerCapture(e.pointerId); e.preventDefault();
+      ePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (ePointers.size === 2) {
+        eDragging = false;
+        ePinchDist = pinchDistance();
+      } else if (ePointers.size === 1) {
+        eDragging = true; eLastX = e.clientX; eLastY = e.clientY;
+      }
     });
     editorCanvas.addEventListener('pointermove', e => {
-      if (!eDragging) return;
-      const dx = e.clientX - eLastX, dy = e.clientY - eLastY;
-      eLastX = e.clientX; eLastY = e.clientY;
+      if (!ePointers.has(e.pointerId)) return;
+      ePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      const item = queue[editorIndex];
+      const v = item.view;
       const k = C / editorCanvas.getBoundingClientRect().width;
-      const v = queue[editorIndex].view;
-      v.x += dx * k; v.y += dy * k;
-      clampView(queue[editorIndex]);
-      drawEditorCanvas(); scheduleRender(editorIndex);
+      if (ePointers.size === 2) {
+        const pts = [...ePointers.values()];
+        const dist = pinchDistance();
+        if (ePinchDist > 0) {
+          const oldZoom = v.zoom;
+          const newZoom = Math.min(ZOOM_MAX, Math.max(1, oldZoom * (dist / ePinchDist)));
+          if (newZoom !== oldZoom) {
+            const rect = editorCanvas.getBoundingClientRect();
+            const midX = (pts[0].x + pts[1].x) / 2, midY = (pts[0].y + pts[1].y) / 2;
+            const px = (midX - rect.left) * k, py = (midY - rect.top) * k;
+            const ph = getPhotoFrame(item);
+            const r = newZoom / oldZoom;
+            v.x = (px - ph.x - ph.w / 2) * (1 - r) + v.x * r;
+            v.y = (py - ph.y - ph.h / 2) * (1 - r) + v.y * r;
+            v.zoom = newZoom;
+          }
+        }
+        ePinchDist = dist;
+        clampView(item);
+        scheduleEditorRender();
+      } else if (eDragging && ePointers.size === 1) {
+        const dx = e.clientX - eLastX, dy = e.clientY - eLastY;
+        eLastX = e.clientX; eLastY = e.clientY;
+        v.x += dx * k; v.y += dy * k;
+        clampView(item);
+        scheduleEditorRender();
+      }
     });
-    editorCanvas.addEventListener('pointerup', () => { eDragging = false; });
-    editorCanvas.addEventListener('pointercancel', () => { eDragging = false; });
+    function eEndPointer(e) {
+      ePointers.delete(e.pointerId);
+      eDragging = false;
+      ePinchDist = 0;
+      if (ePointers.size === 1) {
+        const p = [...ePointers.values()][0];
+        eDragging = true; eLastX = p.x; eLastY = p.y;
+      }
+    }
+    editorCanvas.addEventListener('pointerup', eEndPointer);
+    editorCanvas.addEventListener('pointercancel', eEndPointer);
     editorCanvas.addEventListener('wheel', e => {
       if (editorIndex < 0) return;
       const item = queue[editorIndex];
